@@ -39,6 +39,7 @@ export const ServiceInfo = ({ serviceInfo }) => {
 	const [rangoFechas, setRangoFechas] = useState([]);
 	const [especies, setEspecies] = useState([]);
 	const [error, setError] = useState("");
+	const [currentServiceUrl, setCurrentServiceUrl] = useState('');
 	const {
 		name,
 		description,
@@ -145,6 +146,8 @@ export const ServiceInfo = ({ serviceInfo }) => {
 	useEffect(() => {
 		fetchReservedDates();
 		fetchEspecie();
+		// Store the current URL for redirection after login
+		setCurrentServiceUrl(window.location.href);
 	}, []);
 
 	const openConfirmReservaModal = (category) => {
@@ -457,7 +460,7 @@ export const ServiceInfo = ({ serviceInfo }) => {
 
 			{showLoginForm && (
 				<Modal onClose={closeLoginForm}>
-					<Login isLoginValue={true} />
+					<Login isLoginValue={true} returnUrl={currentServiceUrl} />
 				</Modal>
 			)}
 		</div>

@@ -8,7 +8,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
 
-const Login = ({ isLoginValue }) => {
+const Login = ({ isLoginValue, returnUrl = null }) => {
   const [isLogin, setIsLogin] = useState(isLoginValue);
   const navigate = useNavigate();
   const [errorMessage, setErrorMessage] = useState("");
@@ -50,10 +50,16 @@ const Login = ({ isLoginValue }) => {
           progress: undefined,
           theme: "light",
         });
+        
         setTimeout(() => {
-          window.location.href = response.data.role === "ADMIN" ? "/administracion" : "/";
+          // If returnUrl is provided, redirect there
+          if (returnUrl) {
+            window.location.href = returnUrl;
+          } else {
+            // Otherwise use default redirect
+            window.location.href = response.data.role === "ADMIN" ? "/administracion" : "/";
+          }
         }, 2000);
-
       }
 
       if (response.data.error != null) {
@@ -216,6 +222,7 @@ const Login = ({ isLoginValue }) => {
 
 Login.propTypes = {
   isLoginValue: PropTypes.bool.isRequired,
+  returnUrl: PropTypes.string,
 };
 
 export default Login;
