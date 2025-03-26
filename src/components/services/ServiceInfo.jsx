@@ -6,6 +6,8 @@ import axios from "axios";
 
 // Components
 import { StarsComponent } from "../shared/StarsComponent";
+import Modal from "../shared/Modal/Modal";
+import Login from "../login/Login";
 
 // Styles
 import {
@@ -18,21 +20,22 @@ import {
 import "../../styles/services/serviceInfo.css";
 import CalendarReservasServicio from "../shared/calendar/CalendarReservasServicio";
 import { AuthContext } from "../../auth/AuthContext";
-import { data } from "react-router-dom";
+import { data, useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { LiaPawSolid } from "react-icons/lia";
 import { MdHeight } from "react-icons/md";
 
-
 // Images
 
 export const ServiceInfo = ({ serviceInfo }) => {
-
 	const BASE_URL = import.meta.env.VITE_API_URL || "";
 	const API_URL = `${BASE_URL}/api/reservas`;
 	const { auth } = useContext(AuthContext);
+	const navigate = useNavigate();
 	const [isConfirmReserva, setIsConfirmReserva] = useState(false);
+	const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+	const [showLoginForm, setShowLoginForm] = useState(false);
 	const [rangoFechas, setRangoFechas] = useState([]);
 	const [especies, setEspecies] = useState([]);
 	const [error, setError] = useState("");
@@ -44,7 +47,7 @@ export const ServiceInfo = ({ serviceInfo }) => {
 		caracteristicas,
 		rating,
 		reviews,
-		id_servicio
+		id_servicio,
 	} = serviceInfo;
 	console.log("Service INFO:", serviceInfo);
 
@@ -53,9 +56,8 @@ export const ServiceInfo = ({ serviceInfo }) => {
 	const [cuidadoFinal, setCuidadoFinal] = useState("");
 
 	const realizarReserva = async () => {
-		for(let reserva in rangoFechas){
-			console.log("Fecha del rango: " + rangoFechas[reserva])
-
+		for (let reserva in rangoFechas) {
+			console.log("Fecha del rango: " + rangoFechas[reserva]);
 		}
 		const reservaData = {
 			fechas: rangoFechas,
@@ -116,13 +118,14 @@ export const ServiceInfo = ({ serviceInfo }) => {
 	const fetchReservedDates = async () => {
 		try {
 			const response = await axios.get(
-				`${API_URL}/${id_servicio}/fechas-reservas`, {
-				headers: {
-					Authorization: `Bearer ${auth.token}`,
-				},
-			}
+				`${API_URL}/${id_servicio}/fechas-reservas`,
+				{
+					headers: {
+						Authorization: `Bearer ${auth.token}`,
+					},
+				}
 			);
-			console.log(response)
+			console.log(response);
 			setReservedDates(response.data);
 		} catch (error) {
 			console.error("Error fetching reserved dates:", error);
@@ -132,7 +135,7 @@ export const ServiceInfo = ({ serviceInfo }) => {
 	const fetchEspecie = async () => {
 		try {
 			const response = await axios.get(`${BASE_URL}/api/especies`);
-			console.log(response)
+			console.log(response);
 			setEspecies(response.data);
 		} catch (error) {
 			console.error("Error fetching especies: ", error);
@@ -144,28 +147,63 @@ export const ServiceInfo = ({ serviceInfo }) => {
 		fetchEspecie();
 	}, []);
 
-
 	const openConfirmReservaModal = (category) => {
-
-		setIsConfirmReserva(true);
+		// Check if user is logged in
+		if (!auth || !auth.token) {
+			// User is not logged in, show login modal
+			setIsLoginModalOpen(true);
+		} else {
+			// User is logged in, continue with reservation
+			setIsConfirmReserva(true);
+		}
 	};
 
 	const handleIsConfirmReserva = () => {
-		realizarReserva()
+		realizarReserva();
 	};
 
 	const handleIsConfirmReservaCancel = () => {
 		setIsConfirmReserva(false);
 	};
 
+	const handleLoginModalClose = () => {
+		setIsLoginModalOpen(false);
+	};
+
+	const redirectToLogin = () => {
+		// Close the current modal and show login form
+		setIsLoginModalOpen(false);
+		setShowLoginForm(true);
+	};
+
+	const closeLoginForm = () => {
+		setShowLoginForm(false);
+	};
+
 	function formatDates(initialDate, finalDate) {
 		const months = [
-			"enero", "febrero", "marzo", "abril", "mayo", "junio",
-			"julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
+			"enero",
+			"febrero",
+			"marzo",
+			"abril",
+			"mayo",
+			"junio",
+			"julio",
+			"agosto",
+			"septiembre",
+			"octubre",
+			"noviembre",
+			"diciembre",
 		];
 
 		const days = [
-			"domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"
+			"domingo",
+			"lunes",
+			"martes",
+			"miércoles",
+			"jueves",
+			"viernes",
+			"sábado",
 		];
 
 		const parseDate = (dateString) => {
@@ -174,7 +212,7 @@ export const ServiceInfo = ({ serviceInfo }) => {
 				dayName: days[date.getDay()],
 				date: date.getDate(),
 				monthName: months[date.getMonth()],
-				year: date.getFullYear()
+				year: date.getFullYear(),
 			};
 		};
 
@@ -183,15 +221,23 @@ export const ServiceInfo = ({ serviceInfo }) => {
 
 		return (
 			<div className="periodoFechasConfirm">
-				<p>del <span>{start.dayName} {start.date} de {start.monthName} del {start.year}</span></p>
-				<p>al  <span>{end.dayName} {end.date} de {end.monthName} del {end.year}</span></p>
+				<p>
+					del{" "}
+					<span>
+						{start.dayName} {start.date} de {start.monthName} del {start.year}
+					</span>
+				</p>
+				<p>
+					al{" "}
+					<span>
+						{end.dayName} {end.date} de {end.monthName} del {end.year}
+					</span>
+				</p>
 			</div>
 		);
 	}
 
-
 	return (
-
 		<div className="serviceInfoContainer">
 			<div>
 				<div className="reviewContainer">
@@ -199,7 +245,8 @@ export const ServiceInfo = ({ serviceInfo }) => {
 						<p>Calificación y reseña del servicio</p>
 						<StarsComponent rating={rating} key={name} />
 						<div className="textReview">
-							<p> cantidad </p><p>de reseñas</p>
+							<p> cantidad </p>
+							<p>de reseñas</p>
 						</div>
 					</div>
 				</div>
@@ -208,7 +255,8 @@ export const ServiceInfo = ({ serviceInfo }) => {
 					<p className="name">{name}</p>
 					<div>
 						<p className="details">
-						{caracteristicas[1]?.valor} | {caracteristicas[3]?.valor} de experiencia
+							{caracteristicas[1]?.valor} | {caracteristicas[3]?.valor} de
+							experiencia
 						</p>
 					</div>
 
@@ -220,13 +268,18 @@ export const ServiceInfo = ({ serviceInfo }) => {
 						<div className="featureRow" key={caracteristica.idCaracteristica}>
 							{caracteristica?.icon && (
 								<>
-								<img src={caracteristica.icon} alt={caracteristica?.nombre} height={40} />
-								<p>{caracteristica?.nombre} : {caracteristica?.valor}</p>
+									<img
+										src={caracteristica.icon}
+										alt={caracteristica?.nombre}
+										height={40}
+									/>
+									<p>
+										{caracteristica?.nombre} : {caracteristica?.valor}
+									</p>
 								</>
-							)}							
+							)}
 						</div>
-					))}				
-
+					))}
 				</div>
 			</div>
 
@@ -246,7 +299,7 @@ export const ServiceInfo = ({ serviceInfo }) => {
 								<input
 									type="text"
 									id="cuidadoInicial"
-									value={cuidadoInicial} 
+									value={cuidadoInicial}
 									readOnly
 								/>
 							</div>
@@ -261,7 +314,6 @@ export const ServiceInfo = ({ serviceInfo }) => {
 							</div>
 						</div>
 
-
 						<div className="formReservaMascotas formReservaGral">
 							<label htmlFor="">Cantidad de mascotas</label>
 							<select className="select" name="" id="">
@@ -270,45 +322,50 @@ export const ServiceInfo = ({ serviceInfo }) => {
 								<option value="">3 Mascotas</option>
 								<option value="">4 Mascotas</option>
 							</select>
-
 						</div>
 
 						<div className="formReservaMascotasTipo formReservaGral">
 							<label htmlFor="">Tipo de mascota</label>
 							<select className="select" name="especies">
-							{especies.map(especie => (
-								<option key={especie.idEspecie} value={especie.idEspecie}>{especie.nombreEspecie}</option>
-							))}
-
+								{especies.map((especie) => (
+									<option key={especie.idEspecie} value={especie.idEspecie}>
+										{especie.nombreEspecie}
+									</option>
+								))}
 							</select>
 						</div>
 
-
 						<div className="formReservaReembolso formReservaGral">
-							<label>
-								No reembolsable - $0000 COP en total
-							</label>
+							<label>No reembolsable - $0000 COP en total</label>
 							<div className="formReservaReembolsoRow">
 								<div className="width">
 									<p>
-										Cancelación gratuita durante 24 horas. Después de ese plazo, la reservación no es reembolsable.
+										Cancelación gratuita durante 24 horas. Después de ese plazo,
+										la reservación no es reembolsable.
 									</p>
-									<p>
-										Reembolsable - $0000 COP en total
-									</p>
+									<p>Reembolsable - $0000 COP en total</p>
 								</div>
 								<label>
-									<input type="radio" name="reserva" value="cancelacion-gratuita" />
+									<input
+										type="radio"
+										name="reserva"
+										value="cancelacion-gratuita"
+									/>
 									<span className="custom-radio"></span>
 								</label>
 							</div>
 
 							<div className="formReservaReembolsoRow">
 								<p className="width">
-									Cancelación gratuita antes del 27 mar. Si cancelas antes del check-in el 1 abr, recibirás un reembolso parcial.
+									Cancelación gratuita antes del 27 mar. Si cancelas antes del
+									check-in el 1 abr, recibirás un reembolso parcial.
 								</p>
 								<label>
-									<input type="radio" name="reserva" value="parcial-reembolso" />
+									<input
+										type="radio"
+										name="reserva"
+										value="parcial-reembolso"
+									/>
 									<span className="custom-radio"></span>
 								</label>
 							</div>
@@ -320,24 +377,23 @@ export const ServiceInfo = ({ serviceInfo }) => {
 							type="button"
 							onClick={openConfirmReservaModal}
 							className="btnReservar"
-						>Reserva</button>
+						>
+							Reserva
+						</button>
 						<p>No se hará ningún cargo por el momento</p>
 					</div>
-
 				</form>
-
 			</div>
 
 			{isConfirmReserva && (
 				<div className="modal-overlay">
-					{(cuidadoInicial && cuidadoFinal) ? (
+					{cuidadoInicial && cuidadoFinal ? (
 						<div className="modal-container">
 							<LiaPawSolid className="modal-icon" />
 							<p>
 								<strong>Periodo de fechas reservadas:</strong>
-							</p>							
-								{formatDates(cuidadoInicial, cuidadoFinal)}
-							
+							</p>
+							{formatDates(cuidadoInicial, cuidadoFinal)}
 
 							<div className="modal-buttons">
 								<button
@@ -357,9 +413,7 @@ export const ServiceInfo = ({ serviceInfo }) => {
 					) : (
 						<div className="modal-container">
 							<LiaPawSolid className="modal-icon" />
-							<p>
-								Necesitas seleccionar las fechas del periodo de reserva.
-							</p>
+							<p>Necesitas seleccionar las fechas del periodo de reserva.</p>
 
 							<div className="modal-buttons">
 								<button
@@ -373,7 +427,39 @@ export const ServiceInfo = ({ serviceInfo }) => {
 					)}
 				</div>
 			)}
-		
+
+			{isLoginModalOpen && (
+				<div className="modal-overlay">
+					<div className="modal-container">
+						<LiaPawSolid className="modal-icon" />
+						<p>
+							<strong>Necesitas iniciar sesión</strong>
+						</p>
+						<p>Para realizar una reserva, debes iniciar sesión primero.</p>
+
+						<div className="modal-buttons">
+							<button
+								className="modal-button cancel"
+								onClick={handleLoginModalClose}
+							>
+								Cancelar
+							</button>
+							<button
+								className="modal-button confirm"
+								onClick={redirectToLogin}
+							>
+								Ir a iniciar sesión
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
+
+			{showLoginForm && (
+				<Modal onClose={closeLoginForm}>
+					<Login isLoginValue={true} />
+				</Modal>
+			)}
 		</div>
 	);
 };
