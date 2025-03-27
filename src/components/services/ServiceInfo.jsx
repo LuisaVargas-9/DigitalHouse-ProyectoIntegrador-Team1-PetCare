@@ -39,7 +39,7 @@ export const ServiceInfo = ({ serviceInfo }) => {
 	const [rangoFechas, setRangoFechas] = useState([]);
 	const [especies, setEspecies] = useState([]);
 	const [error, setError] = useState("");
-	const [currentServiceUrl, setCurrentServiceUrl] = useState('');
+	const [currentServiceUrl, setCurrentServiceUrl] = useState("");
 	const {
 		name,
 		description,
