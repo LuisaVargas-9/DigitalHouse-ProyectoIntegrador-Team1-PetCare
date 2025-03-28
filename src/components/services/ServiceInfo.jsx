@@ -1,641 +1,438 @@
-//React
 import { useState, useEffect, useContext } from "react";
+import PropTypes from "prop-types";
 import axios from "axios";
-
-// Pages
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { LiaPawSolid } from "react-icons/lia";
 
 // Components
 import { StarsComponent } from "../shared/StarsComponent";
 import Modal from "../shared/Modal/Modal";
 import Login from "../login/Login";
-
-// Styles
-import {
-	DetailInfoContainer,
-	ReviewContainer,
-	ReviewsStarsContainer,
-	ServiceDetailInfoContainer,
-} from "./styled-components/ServiceDetailInfo";
-
-import "../../styles/services/serviceInfo.css";
 import CalendarReservasServicio from "../shared/calendar/CalendarReservasServicio";
+
+// Context
 import { AuthContext } from "../../auth/AuthContext";
-import { data, useNavigate } from "react-router-dom";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import { LiaPawSolid } from "react-icons/lia";
-import { MdHeight } from "react-icons/md";
 
 // Images
+import closeIcon from "../../images/cerrar.png";
+import pawsIcon from "../../images/paws.png";
+import clockIcon from "../../images/clock.png";
+import calendarIcon from "../../images/calendar.png";
+import catIcon from "../../images/cat.png";
+import payIcon from "../../images/pay.png";
+import animalIcon from "../../images/animal.png";
+import communicationIcon from "../../images/communication.png";
 
-export const ServiceInfo = ({ serviceInfo }) => {
-	const BASE_URL = import.meta.env.VITE_API_URL || "";
-	// Fix URL construction - remove duplicate path segments
-	const API_URL = `${BASE_URL}/api/reservas`;
-	const { auth, updateAuthFromLocalStorage } = useContext(AuthContext);
-	const navigate = useNavigate();
-	const [isConfirmReserva, setIsConfirmReserva] = useState(false);
-	const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-	const [showLoginForm, setShowLoginForm] = useState(false);
-	const [rangoFechas, setRangoFechas] = useState([]);
-	const [especies, setEspecies] = useState([]);
-	const [selectedEspecie, setSelectedEspecie] = useState(1); // Default to first species
-	const [error, setError] = useState("");
-	const [currentServiceUrl, setCurrentServiceUrl] = useState("");
-	const {
-		name,
-		description,
-		service,
-		city,
-		caracteristicas,
-		rating,
-		reviews,
-		id_servicio,
-	} = serviceInfo;
-	console.log("Service INFO:", serviceInfo);
+// Styles
+import "../../styles/services/serviceInfo.css";
 
-	const [reservedDates, setReservedDates] = useState([]);
-	const [cuidadoInicial, setCuidadoInicial] = useState("");
-	const [cuidadoFinal, setCuidadoFinal] = useState("");
+// Constants
+const MONTHS = [
+  "enero", "febrero", "marzo", "abril", "mayo", "junio",
+  "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
+];
 
-	// Function to verify token before making requests
-	const verifyToken = () => {
-		// Check localStorage first
-		const storedToken = localStorage.getItem("token");
+const DAYS = [
+  "domingo", "lunes", "martes", "miércoles", 
+  "jueves", "viernes", "sábado"
+];
 
-		// If auth doesn't have token but localStorage does, update auth
-		if (!auth.token && storedToken) {
-			updateAuthFromLocalStorage();
-			return storedToken;
-		}
+const ServiceInfo = ({ serviceInfo }) => {
+  const BASE_URL = import.meta.env.VITE_API_URL || "";
+  const API_URL = `${BASE_URL}/api/reservas`;
+  const { auth, updateAuthFromLocalStorage } = useContext(AuthContext);
+  const navigate = useNavigate();
 
-		return auth.token || storedToken;
-	};
+  // States
+  const [isConfirmReserva, setIsConfirmReserva] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [showLoginForm, setShowLoginForm] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
+  const [rangoFechas, setRangoFechas] = useState([]);
+  const [especies, setEspecies] = useState([]);
+  const [selectedEspecie, setSelectedEspecie] = useState(1);
+  const [error, setError] = useState("");
+  const [currentServiceUrl, setCurrentServiceUrl] = useState("");
+  const [reservedDates, setReservedDates] = useState([]);
+  const [cuidadoInicial, setCuidadoInicial] = useState("");
+  const [cuidadoFinal, setCuidadoFinal] = useState("");
 
-	// Helper function to inspect token
-	const inspectToken = (token) => {
-		try {
-			// Log token format and length but not the full token for security
-			console.log("Token format check:", {
-				length: token?.length,
-				startsWithBearer: token?.startsWith("Bearer "),
-				firstChars: token?.substring(0, 10) + "...",
-				lastChars: "..." + token?.substring(token?.length - 10),
-			});
+  // Service info destructuring
+  const {
+    name,
+    description,
+    caracteristicas,
+    rating,
+    reviews,
+    id_servicio,
+  } = serviceInfo;
 
-			return token;
-		} catch (e) {
-			console.error("Error inspecting token:", e);
-			return token;
-		}
-	};
+  // Token verification
+  const verifyToken = () => {
+    const storedToken = localStorage.getItem("token");
+    if (!auth.token && storedToken) {
+      updateAuthFromLocalStorage();
+      return storedToken;
+    }
+    return auth.token || storedToken;
+  };
 
-	const realizarReserva = async () => {
-		// Get the most current token - either from context or localStorage
-		let currentToken = auth?.token || localStorage.getItem("token");
+  // Reservation handler
+  const realizarReserva = async () => {
+    const currentToken = verifyToken();
+    
+    if (!currentToken) {
+      toast.error("Debes iniciar sesión para reservar");
+      setIsLoginModalOpen(true);
+      return;
+    }
 
-		if (!currentToken) {
-			toast.error("No hay sesión activa. Por favor inicia sesión.");
-			setIsLoginModalOpen(true);
-			return;
-		}
+    // Format dates
+    const formattedFechas = rangoFechas.map(fecha => 
+      typeof fecha === "string" ? { fecha } : 
+      fecha.fecha?.fecha ? { fecha: fecha.fecha.fecha } : fecha
+    );
 
-		// Check if the token needs "Bearer " prefix
-		const authHeader = currentToken.startsWith("Bearer ")
-			? currentToken
-			: `Bearer ${currentToken}`;
+    const userId = auth?.idUsuario || localStorage.getItem("idUser");
+    
+    try {
+      const response = await axios.post(`${API_URL}/reserva`, {
+        fechas: formattedFechas,
+        estado: "CONFIRMADA",
+        idUsuario: parseInt(userId),
+        idEspecie: selectedEspecie,
+        idServicio: parseInt(id_servicio),
+      }, {
+        headers: {
+          Authorization: `Bearer ${currentToken}`,
+          "Content-Type": "application/json"
+        }
+      });
 
-		console.log("Fechas sin procesar:", rangoFechas);
+      if ([200, 201].includes(response.status)) {
+        toast.success("¡Reserva creada con éxito!");
+        fetchReservedDates();
+      }
+    } catch (error) {
+      handleReservationError(error);
+    } finally {
+      setIsConfirmReserva(false);
+    }
+  };
 
-		// Fix the nested fecha objects problem
-		let formattedFechas = [];
+  const handleReservationError = (error) => {
+    const errorMessage = error.response?.data?.message ||
+      "Error al crear la reserva. Por favor intenta nuevamente.";
+    
+    toast.error(errorMessage);
+    
+    if (error.response?.status === 403) {
+      setIsLoginModalOpen(true);
+    }
+  };
 
-		// Check the structure of rangoFechas to apply appropriate formatting
-		if (rangoFechas.length > 0) {
-			// If rangoFechas already has the right format, use it directly
-			if (typeof rangoFechas[0] === "string") {
-				// Format: ["2025-04-01", "2025-04-02", ...] -> [{"fecha": "2025-04-01"}, {"fecha": "2025-04-02"}, ...]
-				formattedFechas = rangoFechas.map((fecha) => ({ fecha }));
-			} else if (
-				rangoFechas[0].fecha &&
-				typeof rangoFechas[0].fecha === "string"
-			) {
-				// Format: [{"fecha": "2025-04-01"}, ...] -> already correct, use as is
-				formattedFechas = rangoFechas;
-			} else if (
-				rangoFechas[0].fecha &&
-				typeof rangoFechas[0].fecha === "object"
-			) {
-				// Format: [{"fecha": {"fecha": "2025-04-01"}}, ...] -> [{"fecha": "2025-04-01"}, ...]
-				formattedFechas = rangoFechas.map((item) => ({
-					fecha: item.fecha.fecha,
-				}));
-			}
-		}
+  // Data fetching
+  const fetchReservedDates = async () => {
+    try {
+      const response = await axios.get(
+        `${API_URL}/${id_servicio}/fechas-reservas`,
+        { headers: { Authorization: `Bearer ${verifyToken()}` } }
+      );
+      setReservedDates(response.data);
+    } catch (error) {
+      console.error("Error fetching reserved dates:", error);
+    }
+  };
 
-		console.log("Fechas formateadas correctamente:", formattedFechas);
+  const fetchEspecies = async () => {
+    try {
+      const response = await axios.get(`${BASE_URL}/api/especies`);
+      setEspecies(response.data);
+    } catch (error) {
+      console.error("Error fetching especies:", error);
+    }
+  };
 
-		// Get user ID from auth context or localStorage
-		const userId = auth?.idUsuario || localStorage.getItem("idUser");
+  useEffect(() => {
+    fetchReservedDates();
+    fetchEspecies();
+    setCurrentServiceUrl(window.location.href);
+  }, []);
 
-		if (!userId) {
-			toast.error(
-				"No se pudo identificar al usuario. Por favor, inicia sesión nuevamente."
-			);
-			setIsLoginModalOpen(true);
-			return;
-		}
+  // Modal handlers
+  const openConfirmReservaModal = () => {
+    if (!verifyToken()) {
+      setIsLoginModalOpen(true);
+      return;
+    }
+    setIsConfirmReserva(true);
+  };
 
-		// Create reservation data object
-		const reservaData = {
-			fechas: formattedFechas,
-			estado: "CONFIRMADA",
-			idUsuario: parseInt(userId),
-			idEspecie: selectedEspecie,
-			idServicio: parseInt(id_servicio),
-		};
+  // Date formatting
+  const formatDates = (initialDate, finalDate) => {
+    const parseDate = (dateString) => {
+      const date = new Date(dateString);
+      return {
+        dayName: DAYS[date.getDay()],
+        date: date.getDate(),
+        monthName: MONTHS[date.getMonth()],
+        year: date.getFullYear()
+      };
+    };
 
-		console.log("======= DATOS DE RESERVA FINALES =======");
-		console.log(JSON.stringify(reservaData, null, 2));
-		console.log("========================================");
+    const start = parseDate(initialDate);
+    const end = parseDate(finalDate);
 
-		try {
-			console.log(
-				"Authorization header format:",
-				`${authHeader.substring(0, 20)}...${authHeader.substring(
-					authHeader.length - 15
-				)}`
-			);
+    return (
+      <div className="periodoFechasConfirm">
+        <p>del <span>{start.dayName} {start.date} de {start.monthName} del {start.year}</span></p>
+        <p>al <span>{end.dayName} {end.date} de {end.monthName} del {end.year}</span></p>
+      </div>
+    );
+  };
 
-			const response = await axios.post(`${API_URL}/reserva`, reservaData, {
-				headers: {
-					Authorization: authHeader,
-					"Content-Type": "application/json",
-				},
-			});
+  // Terms modal component
+  const TermsModal = () => (
+    <div className="modal-overlay">
+      <div className="terms-modal">
+        <button className="terms-close-icon" onClick={() => setShowTerms(false)}>
+          <img src={closeIcon} alt="Cerrar" />
+        </button>
+        <h2>Términos y condiciones del servicio</h2>
 
-			// Handle success response
-			if (response.status === 201 || response.status === 200) {
-				toast.success("¡Reserva creada con éxito!", {
-					position: "top-right",
-					autoClose: 2000,
-					hideProgressBar: false,
-					closeOnClick: true,
-					pauseOnHover: true,
-					draggable: true,
-					progress: undefined,
-					theme: "light",
-				});
-				fetchReservedDates();
-			}
-		} catch (error) {
-			console.error("Error al crear reserva:", error);
-			console.error("Request URL:", `${API_URL}/reserva`);
-			console.error("Request data:", JSON.stringify(reservaData));
+        {[
+          {
+            icon: pawsIcon,
+            title: "Cuidado responsable",
+            content: "Nos comprometemos a brindar atención profesional a tu mascota."
+          },
+          {
+            icon: clockIcon,
+            title: "Puntualidad",
+            content: "Respetamos tu tiempo y el de nuestros cuidadores."
+          },
+          {
+            icon: calendarIcon,
+            title: "Cancelaciones",
+            content: "Cancelación gratuita 24 horas antes."
+          },
+          {
+            icon: catIcon,
+            title: "Mascotas sociables",
+            content: "Tu mascota debe ser sociable para una mejor experiencia."
+          },
+          {
+            icon: payIcon,
+            title: "Pago seguro",
+            content: "Métodos de pago confiables y seguros."
+          },
+          {
+            icon: animalIcon,
+            title: "Ambiente seguro",
+            content: "Debes mantener un ambiente limpio y seguro."
+          },
+          {
+            icon: communicationIcon,
+            title: "Comunicación",
+            content: "Mantendremos comunicación constante durante el servicio."
+          }
+        ].map((section, index) => (
+          <div className="terms-section" key={index}>
+            <div className="terms-section-content">
+              <img src={section.icon} alt={section.title} className="terms-icon" />
+              <div>
+                <h3>{section.title}</h3>
+                <p>{section.content}</p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
-			// Enhanced error logging
-			if (error.response) {
-				console.error("Estado HTTP:", error.response.status);
-				console.error(
-					"Datos de respuesta:",
-					JSON.stringify(error.response.data)
-				);
-				console.error(
-					"Headers de respuesta:",
-					JSON.stringify(error.response.headers)
-				);
-				console.error(
-					"Config de solicitud:",
-					JSON.stringify(error.config, (key, value) => {
-						// Remove sensitive auth details from logs
-						if (key === "headers" && value.Authorization) {
-							return { ...value, Authorization: "[REDACTED]" };
-						}
-						return value;
-					})
-				);
+  return (
+    <div className="serviceInfoContainer">
+      {/* Sección izquierda - Información del servicio */}
+      <div>
+        <div className="reviewContainer">
+          <div className="reviewStartContainer">
+            <p>Calificación y reseña del servicio</p>
+            <StarsComponent rating={rating} />
+            <div className="textReview">
+              <p>{reviews.length} reseñas</p>
+            </div>
+          </div>
+        </div>
 
-				// Special handling for empty response bodies
-				if (error.response.status === 403) {
-					let errorMsg = "No tienes permisos para crear esta reserva.";
+        <div className="detailInfoContainer">
+          <h1 className="name">{name}</h1>
+          <p className="details">
+            {caracteristicas[1]?.valor} | {caracteristicas[3]?.valor} de experiencia
+          </p>
+          <p className="description">"{description}"</p>
+        </div>
 
-					try {
-						if (error.response.data) {
-							// Try to parse the response data if it's a string
-							if (typeof error.response.data === "string") {
-								const parsedData = JSON.parse(error.response.data);
-								if (parsedData.message) {
-									errorMsg = parsedData.message;
-								}
-							} else if (error.response.data.message) {
-								errorMsg = error.response.data.message;
-							}
-						}
-					} catch (e) {
-						console.error("Error parsing response data:", e);
-					}
+        <div className="features">
+          {caracteristicas.map((caracteristica) => (
+            <div className="featureRow" key={caracteristica.idCaracteristica}>
+              {caracteristica?.icon && (
+                <>
+                  <img
+                    src={caracteristica.icon}
+                    alt={caracteristica.nombre}
+                    height={40}
+                  />
+                  <p>{caracteristica.nombre}: {caracteristica.valor}</p>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
 
-					toast.error(errorMsg);
+        <button 
+          className="terms-button"
+          onClick={() => setShowTerms(true)}
+        >
+          Ver políticas de uso
+        </button>
+        {showTerms && <TermsModal />}
+      </div>
 
-					// Only show login modal for token issues
-					if (
-						errorMsg.includes("token") ||
-						errorMsg.includes("sesión") ||
-						errorMsg.includes("autenti")
-					) {
-						setIsLoginModalOpen(true);
-					}
-				} else {
-					// Other errors
-					const errorMessage =
-						error.response.data?.message ||
-						error.response.data?.error ||
-						"Error al crear la reserva. Por favor intenta nuevamente.";
+      {/* Sección derecha - Reservas */}
+      <div className="reservasContainer">
+        <CalendarReservasServicio
+          reservedDates={reservedDates}
+          setCuidadoInicial={setCuidadoInicial}
+          setCuidadoFinal={setCuidadoFinal}
+          setRangoFechas={setRangoFechas}
+        />
 
-					setError(errorMessage);
-					toast.error(errorMessage);
-				}
-			} else {
-				toast.error(
-					"Error de conexión. Por favor verifica tu conexión a internet."
-				);
-			}
-		} finally {
-			setIsConfirmReserva(false);
-		}
-	};
+        <form className="formReservaContainer">
+          <div className="formReservaCuidados formReservaGral">
+            <div>
+              <label>Cuidado Inicial</label>
+              <input
+                type="text"
+                value={cuidadoInicial}
+                readOnly
+              />
+            </div>
+            <div>
+              <label>Cuidado Final</label>
+              <input
+                type="text"
+                value={cuidadoFinal}
+                readOnly
+              />
+            </div>
+          </div>
 
-	// Update fetch functions to use improved token handling
-	const fetchReservedDates = async () => {
-		try {
-			let currentToken = auth?.token || localStorage.getItem("token");
+          <div className="formReservaMascotas formReservaGral">
+            <label>Cantidad de mascotas</label>
+            <select>
+              {[1, 2, 3, 4].map(num => (
+                <option key={num} value={num}>{num} Mascota{num > 1 ? 's' : ''}</option>
+              ))}
+            </select>
+          </div>
 
-			// Adjust this based on your API requirements!
-			const authHeader = currentToken.startsWith("Bearer ")
-				? currentToken
-				: `Bearer ${currentToken}`;
+          <div className="formReservaMascotasTipo formReservaGral">
+            <label>Tipo de mascota</label>
+            <select
+              value={selectedEspecie}
+              onChange={(e) => setSelectedEspecie(Number(e.target.value))}
+            >
+              {especies.map(especie => (
+                <option key={especie.idEspecie} value={especie.idEspecie}>
+                  {especie.nombreEspecie}
+                </option>
+              ))}
+            </select>
+          </div>
 
-			const response = await axios.get(
-				`${API_URL}/${id_servicio}/fechas-reservas`,
-				{
-					headers: {
-						Authorization: authHeader,
-					},
-				}
-			);
+          <div className="btnReservaContainer">
+            <button
+              type="button"
+              className="btnReservar"
+              onClick={openConfirmReservaModal}
+            >
+              Reservar ahora
+            </button>
+            <p>No se realizará ningún cargo inmediato</p>
+          </div>
+        </form>
+      </div>
 
-			setReservedDates(response.data);
-		} catch (error) {
-			console.error("Error fetching reserved dates:", error);
-			// Don't show error messages for this non-critical function
-		}
-	};
+      {/* Modales */}
+      {isConfirmReserva && (
+        <div className="modal-overlay">
+          <div className="modal-container">
+            <LiaPawSolid className="modal-icon" />
+            {cuidadoInicial && cuidadoFinal ? (
+              <>
+                <p><strong>Periodo de reserva:</strong></p>
+                {formatDates(cuidadoInicial, cuidadoFinal)}
+                <div className="modal-buttons">
+                  <button className="modal-button cancel" onClick={() => setIsConfirmReserva(false)}>
+                    Cancelar
+                  </button>
+                  <button className="modal-button confirm" onClick={realizarReserva}>
+                    Confirmar
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p>Selecciona un rango de fechas válido</p>
+                <button className="modal-button cancel" onClick={() => setIsConfirmReserva(false)}>
+                  Aceptar
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
-	const fetchEspecie = async () => {
-		try {
-			const response = await axios.get(`${BASE_URL}/api/especies`);
-			console.log(response);
-			setEspecies(response.data);
-		} catch (error) {
-			console.error("Error fetching especies: ", error);
-		}
-	};
-
-	useEffect(() => {
-		fetchReservedDates();
-		fetchEspecie();
-		// Store the current URL for redirection after login
-		setCurrentServiceUrl(window.location.href);
-	}, []);
-
-	const openConfirmReservaModal = (category) => {
-		// Check if user is logged in
-		if (!auth || !auth.token) {
-			// User is not logged in, show login modal
-			setIsLoginModalOpen(true);
-		} else {
-			// User is logged in, continue with reservation
-			setIsConfirmReserva(true);
-		}
-	};
-
-	const handleIsConfirmReserva = () => {
-		realizarReserva();
-	};
-
-	const handleIsConfirmReservaCancel = () => {
-		setIsConfirmReserva(false);
-	};
-
-	const handleLoginModalClose = () => {
-		setIsLoginModalOpen(false);
-	};
-
-	const redirectToLogin = () => {
-		// Close the current modal and show login form
-		setIsLoginModalOpen(false);
-		setShowLoginForm(true);
-	};
-
-	const closeLoginForm = () => {
-		setShowLoginForm(false);
-	};
-
-	function formatDates(initialDate, finalDate) {
-		const months = [
-			"enero",
-			"febrero",
-			"marzo",
-			"abril",
-			"mayo",
-			"junio",
-			"julio",
-			"agosto",
-			"septiembre",
-			"octubre",
-			"noviembre",
-			"diciembre",
-		];
-
-		const days = [
-			"domingo",
-			"lunes",
-			"martes",
-			"miércoles",
-			"jueves",
-			"viernes",
-			"sábado",
-		];
-
-		const parseDate = (dateString) => {
-			const date = new Date(dateString);
-			return {
-				dayName: days[date.getDay()],
-				date: date.getDate(),
-				monthName: months[date.getMonth()],
-				year: date.getFullYear(),
-			};
-		};
-
-		const start = parseDate(initialDate);
-		const end = parseDate(finalDate);
-
-		return (
-			<div className="periodoFechasConfirm">
-				<p>
-					del{" "}
-					<span>
-						{start.dayName} {start.date} de {start.monthName} del {start.year}
-					</span>
-				</p>
-				<p>
-					al{" "}
-					<span>
-						{end.dayName} {end.date} de {end.monthName} del {end.year}
-					</span>
-				</p>
-			</div>
-		);
-	}
-
-	// Handle species selection change
-	const handleEspecieChange = (event) => {
-		setSelectedEspecie(Number(event.target.value));
-	};
-
-	return (
-		<div className="serviceInfoContainer">
-			<div>
-				<div className="reviewContainer">
-					<div className="reviewStartContainer">
-						<p>Calificación y reseña del servicio</p>
-						<StarsComponent rating={rating} key={name} />
-						<div className="textReview">
-							<p> cantidad </p>
-							<p>de reseñas</p>
-						</div>
-					</div>
-				</div>
-
-				<div className="detailInfoContainer">
-					<p className="name">{name}</p>
-					<div>
-						<p className="details">
-							{caracteristicas[1]?.valor} | {caracteristicas[3]?.valor} de
-							experiencia
-						</p>
-					</div>
-
-					<p className="details">"{description}"</p>
-				</div>
-
-				<div className="features">
-					{caracteristicas.map((caracteristica) => (
-						<div className="featureRow" key={caracteristica.idCaracteristica}>
-							{caracteristica?.icon && (
-								<>
-									<img
-										src={caracteristica.icon}
-										alt={caracteristica?.nombre}
-										height={40}
-									/>
-									<p>
-										{caracteristica?.nombre} : {caracteristica?.valor}
-									</p>
-								</>
-							)}
-						</div>
-					))}
-				</div>
-			</div>
-
-			<div className="reservasContainer">
-				<CalendarReservasServicio
-					reservedDates={reservedDates}
-					setCuidadoInicial={setCuidadoInicial}
-					setCuidadoFinal={setCuidadoFinal}
-					setRangoFechas={(dates) => {
-						// Ensure the dates are in the correct format before setting state
-						console.log("Fechas recibidas del calendario:", dates);
-						setRangoFechas(dates);
-					}}
-				/>
-
-				<form action="">
-					<div className="formReservaContainer">
-						<div className="formReservaCuidados formReservaGral">
-							<div>
-								<label htmlFor="cuidadoInicial">Cuidado Inicial</label>
-								<input
-									type="text"
-									id="cuidadoInicial"
-									value={cuidadoInicial}
-									readOnly
-								/>
-							</div>
-							<div>
-								<label htmlFor="cuidadoFinal">Cuidado Final</label>
-								<input
-									type="text"
-									id="cuidadoFinal"
-									value={cuidadoFinal}
-									readOnly
-								/>
-							</div>
-						</div>
-
-						<div className="formReservaMascotas formReservaGral">
-							<label htmlFor="">Cantidad de mascotas</label>
-							<select className="select" name="" id="">
-								<option value="">1 Mascota</option>
-								<option value="">2 Mascotas</option>
-								<option value="">3 Mascotas</option>
-								<option value="">4 Mascotas</option>
-							</select>
-						</div>
-
-						<div className="formReservaMascotasTipo formReservaGral">
-							<label htmlFor="especies">Tipo de mascota</label>
-							<select
-								className="select"
-								name="especies"
-								id="especies"
-								onChange={handleEspecieChange}
-								value={selectedEspecie}
-							>
-								{especies.map((especie) => (
-									<option key={especie.idEspecie} value={especie.idEspecie}>
-										{especie.nombreEspecie}
-									</option>
-								))}
-							</select>
-						</div>
-
-						<div className="formReservaReembolso formReservaGral">
-							<label>No reembolsable - $0000 COP en total</label>
-							<div className="formReservaReembolsoRow">
-								<div className="width">
-									<p>
-										Cancelación gratuita durante 24 horas. Después de ese plazo,
-										la reservación no es reembolsable.
-									</p>
-									<p>Reembolsable - $0000 COP en total</p>
-								</div>
-								<label>
-									<input
-										type="radio"
-										name="reserva"
-										value="cancelacion-gratuita"
-									/>
-									<span className="custom-radio"></span>
-								</label>
-							</div>
-
-							<div className="formReservaReembolsoRow">
-								<p className="width">
-									Cancelación gratuita antes del 27 mar. Si cancelas antes del
-									check-in el 1 abr, recibirás un reembolso parcial.
-								</p>
-								<label>
-									<input
-										type="radio"
-										name="reserva"
-										value="parcial-reembolso"
-									/>
-									<span className="custom-radio"></span>
-								</label>
-							</div>
-						</div>
-					</div>
-
-					<div className="btnReservaContainer">
-						<button
-							type="button"
-							onClick={openConfirmReservaModal}
-							className="btnReservar"
-						>
-							Reserva
-						</button>
-						<p>No se hará ningún cargo por el momento</p>
-					</div>
-				</form>
-			</div>
-
-			{isConfirmReserva && (
-				<div className="modal-overlay">
-					{cuidadoInicial && cuidadoFinal ? (
-						<div className="modal-container">
-							<LiaPawSolid className="modal-icon" />
-							<p>
-								<strong>Periodo de fechas reservadas:</strong>
-							</p>
-							{formatDates(cuidadoInicial, cuidadoFinal)}
-
-							<div className="modal-buttons">
-								<button
-									className="modal-button cancel"
-									onClick={handleIsConfirmReservaCancel}
-								>
-									Cancelar
-								</button>
-								<button
-									className="modal-button confirm"
-									onClick={handleIsConfirmReserva}
-								>
-									Confirmar
-								</button>
-							</div>
-						</div>
-					) : (
-						<div className="modal-container">
-							<LiaPawSolid className="modal-icon" />
-							<p>Necesitas seleccionar las fechas del periodo de reserva.</p>
-
-							<div className="modal-buttons">
-								<button
-									className="modal-button cancel"
-									onClick={handleIsConfirmReservaCancel}
-								>
-									Aceptar
-								</button>
-							</div>
-						</div>
-					)}
-				</div>
-			)}
-
-			{isLoginModalOpen && (
-				<div className="modal-overlay">
-					<div className="modal-container">
-						<LiaPawSolid className="modal-icon" />
-						<p>
-							<strong>Necesitas iniciar sesión</strong>
-						</p>
-						<p>Para realizar una reserva, debes iniciar sesión primero.</p>
-
-						<div className="modal-buttons">
-							<button
-								className="modal-button cancel"
-								onClick={handleLoginModalClose}
-							>
-								Cancelar
-							</button>
-							<button
-								className="modal-button confirm"
-								onClick={redirectToLogin}
-							>
-								Ir a iniciar sesión
-							</button>
-						</div>
-					</div>
-				</div>
-			)}
-
-			{showLoginForm && (
-				<Modal onClose={closeLoginForm}>
-					<Login isLoginValue={true} returnUrl={currentServiceUrl} />
-				</Modal>
-			)}
-		</div>
-	);
+      {isLoginModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-container">
+            <LiaPawSolid className="modal-icon" />
+            <h3>Inicio de sesión requerido</h3>
+            <p>Para realizar reservas necesitas estar autenticado</p>
+            <div className="modal-buttons">
+              <button className="modal-button cancel" onClick={() => setIsLoginModalOpen(false)}>
+                Cancelar
+              </button>
+              <button className="modal-button confirm" onClick={() => navigate("/login")}>
+                Ir a login
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 };
+
+ServiceInfo.propTypes = {
+  serviceInfo: PropTypes.shape({
+    name: PropTypes.string.isRequired,
+    description: PropTypes.string.isRequired,
+    caracteristicas: PropTypes.arrayOf(
+      PropTypes.shape({
+        idCaracteristica: PropTypes.number,
+        nombre: PropTypes.string,
+        valor: PropTypes.string,
+        icon: PropTypes.string
+      })
+    ).isRequired,
+    rating: PropTypes.number.isRequired,
+    reviews: PropTypes.array.isRequired,
+    id_servicio: PropTypes.number.isRequired
+  }).isRequired
+};
+
+export default ServiceInfo;
