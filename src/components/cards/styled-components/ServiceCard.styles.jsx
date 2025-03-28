@@ -1,13 +1,12 @@
 import styled from 'styled-components';
 
 export const CardContainer = styled.div`
+  position: relative;
   display: flex;
   align-items: center;
   gap: 10px;
   max-width: 500px;
-  box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.3);
   box-shadow: 0px 4px 8px 3px rgba(0, 0, 0, 0.15);
-  
 `;
 
 export const ImageContainer = styled.div`
