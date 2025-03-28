@@ -31,7 +31,7 @@ export const ServiceCard = ({
       </ImageContainer>
       <InfoContainer>
         <h3 className="serviceType">{serviceType?.nombre}</h3>
-        <FavoriteButton initialFavorite={false} onToggle={(fav) => console.log("Favorito:", fav)} />
+        <FavoriteButton serviceId={id} initialFavorite={false} onToggle={(fav) => console.log("Favorito:", fav)} />
         <NameContainer>
           <p>{name}</p>
           <StarsComponent rating={rating} key={name} />
