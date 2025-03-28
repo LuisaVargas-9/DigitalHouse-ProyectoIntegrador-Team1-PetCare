@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useContext } from "react"; // Add useContext
 import { useForm } from "react-hook-form";
 import axios from "axios";
 import "../../styles/login/login.css";
@@ -7,11 +7,13 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
+import { AuthContext } from "../../auth/AuthContext"; // Import AuthContext
 
 const Login = ({ isLoginValue, returnUrl = null }) => {
 	const [isLogin, setIsLogin] = useState(isLoginValue);
 	const navigate = useNavigate();
 	const [errorMessage, setErrorMessage] = useState("");
+	const { login } = useContext(AuthContext); // Use AuthContext
 
 	const BASE_URL = import.meta.env.VITE_API_URL || "";
 	const API_URL_LOGIN = `${BASE_URL}/api/auth/login`;
@@ -30,13 +32,10 @@ const Login = ({ isLoginValue, returnUrl = null }) => {
 			const url = isLogin ? API_URL_LOGIN : API_URL_REGISTER;
 			const response = await axios.post(url, data);
 
-			// Guardar el token en el localStorage
-			localStorage.setItem("token", response.data.token);
-			localStorage.setItem("role", response.data.role);
-			localStorage.setItem("idUser", response.data.idUsuario);
-			localStorage.setItem("userName", response.data.nombre || "Usuario");
-			localStorage.setItem("lastname", response.data.apellido || "Apellido");
+			// Directly update auth context with login function
+			login(response.data);
 
+			// Display success message
 			if (response.data.message != null) {
 				toast.success(response.data.message, {
 					position: "top-right",
@@ -49,6 +48,7 @@ const Login = ({ isLoginValue, returnUrl = null }) => {
 					theme: "light",
 				});
 
+				// Use timeout to ensure auth context is updated before navigation
 				setTimeout(() => {
 					// If returnUrl is provided, redirect there
 					if (returnUrl) {
