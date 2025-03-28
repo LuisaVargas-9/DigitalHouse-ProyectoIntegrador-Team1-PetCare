@@ -11,16 +11,18 @@ export const CardContainer = styled.div`
 `;
 
 export const ImageContainer = styled.div`
-    width: 50%;
-    padding:0px;
-    margin:0px;
+  width: 50%;
+  height: 215px; 
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
 `;
 
 export const Image = styled.img`
   width: 100%;
-  height: auto;
-  margin-bottom: 0px;
-  padding-bottom:0px;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 `;
 
 export const InfoContainer = styled.div`
@@ -60,7 +62,7 @@ export const ExcerptContainer = styled.div`
   & p{
     color: #000000;
     font-weight: 400;
-    font-size: 14px;
+    font-size: 11px;
   }
 
   @media (max-width: 767px) {

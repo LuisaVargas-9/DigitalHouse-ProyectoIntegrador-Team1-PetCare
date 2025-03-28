@@ -46,9 +46,9 @@ const ServiceDetail = ({ selectedService, onGoBack }) => {
 			/>
 			<ServiceInfo
 				serviceInfo={{
-					name: service.nombre,
+					name: service?.nombre,
 					description: service.descripcion,
-					service: service.categoria.name,
+					service: service?.categoria?.name,
 					city: service.ciudad,
 					caracteristicas: service.caracteristicas,
 					rating: service.rating,
