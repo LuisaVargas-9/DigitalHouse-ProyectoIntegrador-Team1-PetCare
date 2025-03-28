@@ -9,10 +9,10 @@ import { StarsComponent } from "../shared/StarsComponent";
 
 // Styles
 import {
-	DetailInfoContainer,
-	ReviewContainer,
-	ReviewsStarsContainer,
-	ServiceDetailInfoContainer,
+  DetailInfoContainer,
+  ReviewContainer,
+  ReviewsStarsContainer,
+  ServiceDetailInfoContainer,
 } from "./styled-components/ServiceDetailInfo";
 
 import "../../styles/services/serviceInfo.css";
@@ -23,357 +23,486 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { LiaPawSolid } from "react-icons/lia";
 import { MdHeight } from "react-icons/md";
-
+import closeIcon from "../../images/cerrar.png";
+import pawsIcon from "../../images/paws.png";
+import clockIcon from "../../images/clock.png";
+import calendarIcon from "../../images/calendar.png";
+import catIcon from "../../images/cat.png";
+import payIcon from "../../images/pay.png";
+import animalIcon from "../../images/animal.png";
+import communicationIcon from "../../images/communication.png";
 
 // Images
 
 export const ServiceInfo = ({ serviceInfo }) => {
 
-	const BASE_URL = import.meta.env.VITE_API_URL || "";
-	const API_URL = `${BASE_URL}/api/reservas`;
-	const { auth } = useContext(AuthContext);
-	const [isConfirmReserva, setIsConfirmReserva] = useState(false);
-	const [rangoFechas, setRangoFechas] = useState([]);
-	const [especies, setEspecies] = useState([]);
-	const [error, setError] = useState("");
-	const {
-		name,
-		description,
-		service,
-		city,
-		caracteristicas,
-		rating,
-		reviews,
+  const BASE_URL = import.meta.env.VITE_API_URL || "";
+  const API_URL = `${BASE_URL}/api/reservas`;
+  const { auth } = useContext(AuthContext);
+  const [isConfirmReserva, setIsConfirmReserva] = useState(false);
+  const [rangoFechas, setRangoFechas] = useState([]);
+  const [especies, setEspecies] = useState([]);
+  const [error, setError] = useState("");
+  const {
+    name,
+    description,
+    service,
+    city,
+    caracteristicas,
+    rating,
+    reviews,
 		id_servicio
-	} = serviceInfo;
-	console.log("Service INFO:", serviceInfo);
+  } = serviceInfo;
+  console.log("Service INFO:", serviceInfo);
 
-	const [reservedDates, setReservedDates] = useState([]);
-	const [cuidadoInicial, setCuidadoInicial] = useState("");
-	const [cuidadoFinal, setCuidadoFinal] = useState("");
+  const [reservedDates, setReservedDates] = useState([]);
+  const [cuidadoInicial, setCuidadoInicial] = useState("");
+  const [cuidadoFinal, setCuidadoFinal] = useState("");
+  const [showTerms, setShowTerms] = useState(false);
 
-	const realizarReserva = async () => {
+  const realizarReserva = async () => {
 		for(let reserva in rangoFechas){
 			console.log("Fecha del rango: " + rangoFechas[reserva])
 
-		}
-		const reservaData = {
-			fechas: rangoFechas,
-			estado: "CONFIRMADA",
-			idUsuario: auth.idUsuario,
-			idEspecie: 1,
-			idServicio: id_servicio,
-		};
+    }
+    const reservaData = {
+      fechas: rangoFechas,
+      estado: "CONFIRMADA",
+      idUsuario: auth.idUsuario,
+      idEspecie: 1,
+      idServicio: id_servicio,
+    };
 
-		try {
-			const response = await axios.post(`${API_URL}/reserva`, reservaData, {
-				headers: {
-					Authorization: `Bearer ${auth.token}`,
-					"Content-Type": "application/json",
-				},
-			});
+    try {
+      const response = await axios.post(`${API_URL}/reserva`, reservaData, {
+        headers: {
+          Authorization: `Bearer ${auth.token}`,
+          "Content-Type": "application/json",
+        },
+      });
 
-			// Verifica si se creó la reserva correctamente
-			if (response.status === 201) {
-				toast.success("Reserva creada con éxito!", {
-					position: "top-right",
-					autoClose: 2000,
-					hideProgressBar: false,
-					closeOnClick: true,
-					pauseOnHover: true,
-					draggable: true,
-					progress: undefined,
-					theme: "light",
-				});
-				fetchReservedDates();
-				console.log("Respuesta del servidor:", response.data);
-			} else {
-				console.error("Error al crear la reserva", response);
-				toast.success("Hubo un problema al crear la reserva", {
-					position: "top-right",
-					autoClose: 2000,
-					hideProgressBar: false,
-					closeOnClick: true,
-					pauseOnHover: true,
-					draggable: true,
-					progress: undefined,
-					theme: "light",
-				});
-			}
-		} catch (error) {
-			const errorMessage =
-				error.response?.status === 403
-					? "No tienes permisos para crear una reserva"
-					: "Error al crear la reserva";
-			setError(errorMessage);
-			toast.error(errorMessage);
-		} finally {
-			setIsConfirmReserva(false);
-			fetchReservedDates();
-		}
-	};
+      // Verifica si se creó la reserva correctamente
+      if (response.status === 201) {
+        toast.success("Reserva creada con éxito!", {
+          position: "top-right",
+          autoClose: 2000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "light",
+        });
+        fetchReservedDates();
+        console.log("Respuesta del servidor:", response.data);
+      } else {
+        console.error("Error al crear la reserva", response);
+        toast.success("Hubo un problema al crear la reserva", {
+          position: "top-right",
+          autoClose: 2000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "light",
+        });
+      }
+    } catch (error) {
+      const errorMessage =
+        error.response?.status === 403
+          ? "No tienes permisos para crear una reserva"
+          : "Error al crear la reserva";
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setIsConfirmReserva(false);
+      fetchReservedDates();
+    }
+  };
 
-	const fetchReservedDates = async () => {
-		try {
-			const response = await axios.get(
+  const fetchReservedDates = async () => {
+    try {
+      const response = await axios.get(
 				`${API_URL}/${id_servicio}/fechas-reservas`, {
-				headers: {
-					Authorization: `Bearer ${auth.token}`,
-				},
-			}
-			);
+          headers: {
+            Authorization: `Bearer ${auth.token}`,
+          },
+        }
+      );
 			console.log(response)
-			setReservedDates(response.data);
-		} catch (error) {
-			console.error("Error fetching reserved dates:", error);
-		}
-	};
+      setReservedDates(response.data);
+    } catch (error) {
+      console.error("Error fetching reserved dates:", error);
+    }
+  };
 
-	const fetchEspecie = async () => {
-		try {
-			const response = await axios.get(`${BASE_URL}/api/especies`);
+  const fetchEspecie = async () => {
+    try {
+      const response = await axios.get(`${BASE_URL}/api/especies`);
 			console.log(response)
-			setEspecies(response.data);
-		} catch (error) {
-			console.error("Error fetching especies: ", error);
-		}
-	};
+      setEspecies(response.data);
+    } catch (error) {
+      console.error("Error fetching especies: ", error);
+    }
+  };
 
-	useEffect(() => {
-		fetchReservedDates();
-		fetchEspecie();
-	}, []);
+  useEffect(() => {
+    fetchReservedDates();
+    fetchEspecie();
+  }, []);
 
 
-	const openConfirmReservaModal = (category) => {
+  const openConfirmReservaModal = (category) => {
 
-		setIsConfirmReserva(true);
-	};
+    setIsConfirmReserva(true);
+  };
 
-	const handleIsConfirmReserva = () => {
-		realizarReserva()
-	};
+  const handleIsConfirmReserva = () => {
+    realizarReserva();
+  };
 
-	const handleIsConfirmReservaCancel = () => {
-		setIsConfirmReserva(false);
-	};
+  const handleIsConfirmReservaCancel = () => {
+    setIsConfirmReserva(false);
+  };
 
-	function formatDates(initialDate, finalDate) {
-		const months = [
+  function formatDates(initialDate, finalDate) {
+    const months = [
 			"enero", "febrero", "marzo", "abril", "mayo", "junio",
 			"julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
-		];
+    ];
 
-		const days = [
+    const days = [
 			"domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"
-		];
+    ];
 
-		const parseDate = (dateString) => {
-			const date = new Date(dateString);
-			return {
-				dayName: days[date.getDay()],
-				date: date.getDate(),
-				monthName: months[date.getMonth()],
+    const parseDate = (dateString) => {
+      const date = new Date(dateString);
+      return {
+        dayName: days[date.getDay()],
+        date: date.getDate(),
+        monthName: months[date.getMonth()],
 				year: date.getFullYear()
-			};
-		};
+      };
+    };
 
-		const start = parseDate(initialDate);
-		const end = parseDate(finalDate);
+    const start = parseDate(initialDate);
+    const end = parseDate(finalDate);
 
-		return (
-			<div className="periodoFechasConfirm">
-				<p>del <span>{start.dayName} {start.date} de {start.monthName} del {start.year}</span></p>
-				<p>al  <span>{end.dayName} {end.date} de {end.monthName} del {end.year}</span></p>
-			</div>
-		);
-	}
+    return (
+      <div className="periodoFechasConfirm">
+        <p>
+          del{" "}
+          <span>
+            {start.dayName} {start.date} de {start.monthName} del {start.year}
+          </span>
+        </p>
+        <p>
+          al{" "}
+          <span>
+            {end.dayName} {end.date} de {end.monthName} del {end.year}
+          </span>
+        </p>
+      </div>
+    );
+  }
 
 
-	return (
+  return (
 
-		<div className="serviceInfoContainer">
-			<div>
-				<div className="reviewContainer">
-					<div className="reviewStartContainer">
-						<p>Calificación y reseña del servicio</p>
-						<StarsComponent rating={rating} key={name} />
-						<div className="textReview">
+    <div className="serviceInfoContainer">
+      <div>
+        <div className="reviewContainer">
+          <div className="reviewStartContainer">
+            <p>Calificación y reseña del servicio</p>
+            <StarsComponent rating={rating} key={name} />
+            <div className="textReview">
 							<p> cantidad </p><p>de reseñas</p>
-						</div>
-					</div>
-				</div>
+            </div>
+          </div>
+        </div>
 
-				<div className="detailInfoContainer">
-					<p className="name">{name}</p>
-					<div>
-						<p className="details">
+        <div className="detailInfoContainer">
+          <p className="name">{name}</p>
+          <div>
+            <p className="details">
 						{caracteristicas[1]?.valor} | {caracteristicas[3]?.valor} de experiencia
-						</p>
-					</div>
+            </p>
+          </div>
 
-					<p className="details">"{description}"</p>
-				</div>
+          <p className="details">"{description}"</p>
+        </div>
 
-				<div className="features">
-					{caracteristicas.map((caracteristica) => (
-						<div className="featureRow" key={caracteristica.idCaracteristica}>
-							{caracteristica?.icon && (
-								<>
+        <div className="features">
+          {caracteristicas.map((caracteristica) => (
+            <div className="featureRow" key={caracteristica.idCaracteristica}>
+              {caracteristica?.icon && (
+                <>
 								<img src={caracteristica.icon} alt={caracteristica?.nombre} height={40} />
 								<p>{caracteristica?.nombre} : {caracteristica?.valor}</p>
-								</>
-							)}							
-						</div>
-					))}				
+                </>
+              )}
+            </div>
+          ))}
+        </div>
 
-				</div>
-			</div>
+        <button className="terms-button" onClick={() => setShowTerms(true)}>
+          Revisa Nuestras Políticas de uso
+        </button>
 
-			<div className="reservasContainer">
-				<CalendarReservasServicio
-					reservedDates={reservedDates}
-					setCuidadoInicial={setCuidadoInicial}
-					setCuidadoFinal={setCuidadoFinal}
-					setRangoFechas={setRangoFechas}
-				/>
+        {showTerms && (
+          <div className="modal-overlay">
+            <div className="terms-modal">
+              <button
+                className="terms-close-icon"
+                onClick={() => setShowTerms(false)}
+              >
+                <img src={closeIcon} alt="Cerrar" />
+              </button>
+              <h2>Términos y condiciones del servicio</h2>
 
-				<form action="">
-					<div className="formReservaContainer">
-						<div className="formReservaCuidados formReservaGral">
-							<div>
-								<label htmlFor="cuidadoInicial">Cuidado Inicial</label>
-								<input
-									type="text"
-									id="cuidadoInicial"
-									value={cuidadoInicial} 
-									readOnly
-								/>
-							</div>
-							<div>
-								<label htmlFor="cuidadoFinal">Cuidado Final</label>
-								<input
-									type="text"
-									id="cuidadoFinal"
-									value={cuidadoFinal}
-									readOnly
-								/>
-							</div>
-						</div>
+              <div className="terms-section">
+                <div className="terms-section-content">
+                  <img src={pawsIcon} alt="Cuidado responsable" className="terms-icon" />
+                  <div>
+                    <h3>Cuidado responsable</h3>
+                    <p>
+                      Nos comprometemos a brindar atención amorosa y profesional a
+                      tu mascota. Esperamos que nos informes sobre cualquier
+                      necesidad especial, condición médica o comportamiento
+                      relevante.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="terms-section">
+                <div className="terms-section-content">
+                  <img src={clockIcon} alt="Puntualidad" className="terms-icon" />
+                  <div>
+                    <h3>Puntualidad en las citas</h3>
+                    <p>
+                      Respetamos tu tiempo y el de nuestros cuidadores. Por eso, te
+                      pedimos estar disponible en el horario acordado para los
+                      servicios a domicilio.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="terms-section">
+                <div className="terms-section-content">
+                  <img src={calendarIcon} alt="Cambios" className="terms-icon" />
+                  <div>
+                    <h3>Cambios y cancelaciones</h3>
+                    <p>
+                      Puedes reprogramar o cancelar tu cita con al menos 12 horas de
+                      anticipación. Cancelaciones fuera de este plazo podrían
+                      generar un costo adicional.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="terms-section">
+                <div className="terms-section-content">
+                  <img src={catIcon} alt="Mascotas sociables" className="terms-icon" />
+                  <div>
+                    <h3>Mascotas sociables y seguras</h3>
+                    <p>
+                      Es importante que tu mascota sea sociable y segura para garantizar una 
+                      experiencia positiva durante el servicio.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="terms-section">
+                <div className="terms-section-content">
+                  <img src={payIcon} alt="Pago seguro" className="terms-icon" />
+                  <div>
+                    <h3>Pago seguro</h3>
+                    <p>
+                      Utilizamos métodos de pago seguros y confiables para tu tranquilidad.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="terms-section">
+                <div className="terms-section-content">
+                  <img src={animalIcon} alt="Condiciones del hogar" className="terms-icon" />
+                  <div>
+                    <h3>Condiciones del hogar</h3>
+                    <p>
+                      Es necesario mantener un ambiente limpio y seguro para el bienestar 
+                      de tu mascota durante el servicio.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="terms-section">
+                <div className="terms-section-content">
+                  <img src={communicationIcon} alt="Comunicación" className="terms-icon" />
+                  <div>
+                    <h3>Comunicación abierta</h3>
+                    <p>
+                      Mantendremos una comunicación clara y constante sobre el estado y 
+                      bienestar de tu mascota durante todo el servicio.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="reservasContainer">
+        <CalendarReservasServicio
+          reservedDates={reservedDates}
+          setCuidadoInicial={setCuidadoInicial}
+          setCuidadoFinal={setCuidadoFinal}
+          setRangoFechas={setRangoFechas}
+        />
+
+        <form action="">
+          <div className="formReservaContainer">
+            <div className="formReservaCuidados formReservaGral">
+              <div>
+                <label htmlFor="cuidadoInicial">Cuidado Inicial</label>
+                <input
+                  type="text"
+                  id="cuidadoInicial"
+                  value={cuidadoInicial}
+                  readOnly
+                />
+              </div>
+              <div>
+                <label htmlFor="cuidadoFinal">Cuidado Final</label>
+                <input
+                  type="text"
+                  id="cuidadoFinal"
+                  value={cuidadoFinal}
+                  readOnly
+                />
+              </div>
+            </div>
 
 
-						<div className="formReservaMascotas formReservaGral">
-							<label htmlFor="">Cantidad de mascotas</label>
-							<select className="select" name="" id="">
-								<option value="">1 Mascota</option>
-								<option value="">2 Mascotas</option>
-								<option value="">3 Mascotas</option>
-								<option value="">4 Mascotas</option>
-							</select>
+            <div className="formReservaMascotas formReservaGral">
+              <label htmlFor="">Cantidad de mascotas</label>
+              <select className="select" name="" id="">
+                <option value="">1 Mascota</option>
+                <option value="">2 Mascotas</option>
+                <option value="">3 Mascotas</option>
+                <option value="">4 Mascotas</option>
+              </select>
 
-						</div>
+            </div>
 
-						<div className="formReservaMascotasTipo formReservaGral">
-							<label htmlFor="">Tipo de mascota</label>
-							<select className="select" name="especies">
+            <div className="formReservaMascotasTipo formReservaGral">
+              <label htmlFor="">Tipo de mascota</label>
+              <select className="select" name="especies">
 							{especies.map(especie => (
 								<option key={especie.idEspecie} value={especie.idEspecie}>{especie.nombreEspecie}</option>
-							))}
+                ))}
 
-							</select>
-						</div>
+              </select>
+            </div>
 
 
-						<div className="formReservaReembolso formReservaGral">
+            <div className="formReservaReembolso formReservaGral">
 							<label>
 								No reembolsable - $0000 COP en total
 							</label>
-							<div className="formReservaReembolsoRow">
-								<div className="width">
-									<p>
+              <div className="formReservaReembolsoRow">
+                <div className="width">
+                  <p>
 										Cancelación gratuita durante 24 horas. Después de ese plazo, la reservación no es reembolsable.
-									</p>
+                  </p>
 									<p>
 										Reembolsable - $0000 COP en total
 									</p>
-								</div>
-								<label>
+                </div>
+                <label>
 									<input type="radio" name="reserva" value="cancelacion-gratuita" />
-									<span className="custom-radio"></span>
-								</label>
-							</div>
+                  <span className="custom-radio"></span>
+                </label>
+              </div>
 
-							<div className="formReservaReembolsoRow">
-								<p className="width">
+              <div className="formReservaReembolsoRow">
+                <p className="width">
 									Cancelación gratuita antes del 27 mar. Si cancelas antes del check-in el 1 abr, recibirás un reembolso parcial.
-								</p>
-								<label>
+                </p>
+                <label>
 									<input type="radio" name="reserva" value="parcial-reembolso" />
-									<span className="custom-radio"></span>
-								</label>
-							</div>
-						</div>
-					</div>
+                  <span className="custom-radio"></span>
+                </label>
+              </div>
+            </div>
+          </div>
 
-					<div className="btnReservaContainer">
-						<button
-							type="button"
-							onClick={openConfirmReservaModal}
-							className="btnReservar"
+          <div className="btnReservaContainer">
+            <button
+              type="button"
+              onClick={openConfirmReservaModal}
+              className="btnReservar"
 						>Reserva</button>
-						<p>No se hará ningún cargo por el momento</p>
-					</div>
+            <p>No se hará ningún cargo por el momento</p>
+          </div>
 
-				</form>
+        </form>
 
-			</div>
+      </div>
 
-			{isConfirmReserva && (
-				<div className="modal-overlay">
+      {isConfirmReserva && (
+        <div className="modal-overlay">
 					{(cuidadoInicial && cuidadoFinal) ? (
-						<div className="modal-container">
-							<LiaPawSolid className="modal-icon" />
-							<p>
-								<strong>Periodo de fechas reservadas:</strong>
-							</p>							
-								{formatDates(cuidadoInicial, cuidadoFinal)}
+            <div className="modal-container">
+              <LiaPawSolid className="modal-icon" />
+              <p>
+                <strong>Periodo de fechas reservadas:</strong>
+              </p>
+              {formatDates(cuidadoInicial, cuidadoFinal)}
 							
 
-							<div className="modal-buttons">
-								<button
-									className="modal-button cancel"
-									onClick={handleIsConfirmReservaCancel}
-								>
-									Cancelar
-								</button>
-								<button
-									className="modal-button confirm"
-									onClick={handleIsConfirmReserva}
-								>
-									Confirmar
-								</button>
-							</div>
-						</div>
-					) : (
-						<div className="modal-container">
-							<LiaPawSolid className="modal-icon" />
+              <div className="modal-buttons">
+                <button
+                  className="modal-button cancel"
+                  onClick={handleIsConfirmReservaCancel}
+                >
+                  Cancelar
+                </button>
+                <button
+                  className="modal-button confirm"
+                  onClick={handleIsConfirmReserva}
+                >
+                  Confirmar
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="modal-container">
+              <LiaPawSolid className="modal-icon" />
 							<p>
 								Necesitas seleccionar las fechas del periodo de reserva.
 							</p>
 
-							<div className="modal-buttons">
-								<button
-									className="modal-button cancel"
-									onClick={handleIsConfirmReservaCancel}
-								>
-									Aceptar
-								</button>
-							</div>
-						</div>
-					)}
-				</div>
-			)}
+              <div className="modal-buttons">
+                <button
+                  className="modal-button cancel"
+                  onClick={handleIsConfirmReservaCancel}
+                >
+                  Aceptar
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 		
-		</div>
-	);
+    </div>
+  );
 };
