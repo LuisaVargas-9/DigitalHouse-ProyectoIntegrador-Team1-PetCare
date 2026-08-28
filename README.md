@@ -200,32 +200,21 @@ The backend was developed using:
 
 ## 👥 Project Context
 
-PetCare was developed as a collaborative Full Stack project during the **Certified Tech Developer program at Digital House**.
+PetCare was developed collaboratively as part of the **Certified Tech Developer program at Digital House**.
 
-The project involved working with:
+The project involved teamwork across frontend, backend, integration, and deployment tasks using Git and GitHub.
 
-- Agile methodologies
-- Git and GitHub
-- Feature branches
-- REST API integration
-- Frontend / backend separation
-- Authentication and authorization
-- Cloud services
+### My Participation
+
+I participated as a member of the development team. This repository is included in my portfolio to showcase the technologies, Full Stack workflow, and collaborative development experience involved in the project.
+
+**Luisa Vargas**  
+Full Stack Developer
+
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Luisa_Vargas-0A66C2?style=flat-square&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/luisa-vargas-233494200/)
 
 ---
 
 ## 📌 Repository Status
 
-This repository is maintained primarily as part of my **software development portfolio** and represents one of the Full Stack projects completed during my professional developer training.
-
----
-
-## 👩‍💻 Developer
-
-**Luisa Vargas**
-
-Full Stack Developer | Software Developer
-
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Luisa_Vargas-0A66C2?style=flat-square&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/luisa-vargas-233494200/)
-
-[![GitHub](https://img.shields.io/badge/GitHub-LuisaVargas--9-181717?style=flat-square&logo=github&logoColor=white)](https://github.com/LuisaVargas-9)
+This repository is maintained primarily as part of my **software development portfolio** and represents one of the collaborative Full Stack projects completed during my professional developer training.
